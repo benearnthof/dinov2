@@ -317,6 +317,18 @@ class DinoVisionTransformer(nn.Module):
             return tuple(zip(outputs, class_tokens))
         return tuple(outputs)
 
+    def get_intermediate_feat(self, x, n=1, masks=None):
+        x = self.prepare_tokens_with_masks(x, masks)
+        # we return the output tokens from the `n` last blocks
+        feat, attns, qkvs = [], [], []
+        
+        for i, blk in enumerate(self.blocks):
+            x, attn, qkv = blk(x, return_qkv=True)
+            feat.append(self.norm(x))
+            qkvs.append(qkv)
+            attns.append(attn)
+        return feat, attns, qkvs
+
     def get_last_self_attention(self, x, masks=None):
         if isinstance(x, list):
             return self.forward_features_list(x, masks)
